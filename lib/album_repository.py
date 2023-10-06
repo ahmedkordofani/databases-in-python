@@ -26,12 +26,24 @@ class AlbumRepository:
                 conn.close()
         return albums
 
-
     def find(self, album_id):
-        rows = self._connection.execute(
-            'SELECT * from albums WHERE id = %s', [album_id])
-        row = rows[0]
-        return Album(row["id"], row["title"], row["release_year"], row["artist_id"])
+        conn = None  # Initialize the connection variable
+        try:
+            conn = psycopg2.connect(self.connection_string)
+            cursor = conn.cursor()
+            cursor.execute('SELECT * FROM albums WHERE id = %s', [album_id])
+            row = cursor.fetchone()
+            if row:
+                return Album(row[0], row[1], row[2], row[3])
+            else:
+                return None  # Return None if no album with the given ID is found
+        except psycopg2.Error as e:
+            print(f"Error fetching album: {e}")
+        finally:
+            if conn:
+                conn.close()
+            return None
+
 
     def create(self, album):
         self._connection.execute('INSERT INTO albums (title, release_year, artist_id) VALUES (%s, %s, %s)', [
